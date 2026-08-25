@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>신재생에너지 마스터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=Jua&display=swap" rel="stylesheet">
+<style>
+/* ── 몽글몽글 팔레트 ─────────────────────────────────────────
+   흰 카드 + 파스텔 + 큰 모서리. 그림자에 보랏빛을 살짝 머금게 해서
+   딱딱한 회색 그림자가 생기지 않게 한다.                            */
+:root{
+  --bg1:#FFF6F0; --bg2:#F0F7FF; --bg3:#FBF2FF;
+  --card:#FFFFFF; --ink:#4A4458; --dim:#8B8398; --line:#F0EBF5;
+  --mint:#8FE3C4; --mint-d:#3FBF95;
+  --peach:#FFC9A8; --peach-d:#F58E52;
+  --pink:#FFB3C6; --pink-d:#F2698D;
+  --lav:#C9B6FF; --lav-d:#8A6BE8;
+  --sky:#A5D8FF; --sky-d:#3E9BE0;
+  --gold:#E0930C;
+  --good:#3FBF95; --bad:#F2698D;
+  --sh:0 10px 24px rgba(160,140,190,.14), 0 2px 6px rgba(160,140,190,.10);
+  --sh-lg:0 18px 44px rgba(160,140,190,.20);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+/* 본문은 읽기 쉬운 고딕, 제목·버튼만 둥근 손글씨체를 쓴다.
+   해설이 길어서 본문까지 손글씨체로 두면 눈이 아프다. */
+body{
+  font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+  color:var(--ink); background:var(--bg1); line-height:1.65;
+  background-image:
+    radial-gradient(60rem 40rem at 8% -10%, var(--bg2) 0%, transparent 60%),
+    radial-gradient(50rem 36rem at 100% 6%, var(--bg3) 0%, transparent 62%),
+    radial-gradient(44rem 34rem at 50% 108%, #EAFBF3 0%, transparent 60%);
+  background-attachment:fixed;
+  min-height:100vh;
+}
+.wrap{max-width:940px;margin:0 auto;padding:20px 16px 96px}
+.hidden{display:none !important}
+
+/* ── 몽글 버튼 ── */
+.btn{
+  border:0;cursor:pointer;font-family:'Jua',inherit;font-size:16px;
+  padding:12px 22px;border-radius:999px;color:#fff;background:var(--lav-d);
+  box-shadow:0 5px 0 rgba(0,0,0,.10), var(--sh);
+  transition:transform .12s cubic-bezier(.34,1.56,.64,1), box-shadow .12s, filter .12s;
+}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.05)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.10)}
+.btn.mint{background:var(--mint-d)} .btn.peach{background:var(--peach-d)}
+.btn.pink{background:var(--pink-d)} .btn.sky{background:var(--sky-d)}
+.btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line), var(--sh)}
+.btn.sm{padding:8px 16px;font-size:14px}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+
+/* ── 머리말 ── */
+.hero{text-align:center;padding:26px 8px 12px;position:relative}
+.hero h1{
+  font-family:'Gaegu','Jua',sans-serif;font-size:clamp(30px,7vw,46px);margin:0 0 6px;
+  color:var(--ink);letter-spacing:-.5px;
+}
+.hero h1 .sun{display:inline-block;animation:spin 9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hero p{margin:0;color:var(--dim);font-size:15px}
+
+/* ── 카드 ── */
+.card{
+  background:var(--card);border-radius:28px;padding:20px 22px;box-shadow:var(--sh);
+  border:2px solid #fff; margin:14px 0;
+}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px}
+.chap{
+  background:var(--card);border-radius:26px;padding:18px 18px 16px;box-shadow:var(--sh);
+  border:2px solid #fff;position:relative;overflow:hidden;
+  transition:transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .16s;
+}
+.chap:hover{transform:translateY(-4px);box-shadow:var(--sh-lg)}
+.chap .tag{
+  display:inline-block;font-size:12px;padding:3px 12px;border-radius:999px;
+  background:var(--bg3);color:var(--lav-d);margin-bottom:8px;
+}
+.chap h3{margin:0 0 4px;font-family:'Jua',inherit;font-size:19px;line-height:1.35;word-break:keep-all;font-weight:400}
+.chap .meta{color:var(--dim);font-size:13px;margin-bottom:10px}
+.chap .acts{display:flex;gap:8px;flex-wrap:wrap}
+.chap .puff{position:absolute;right:-26px;top:-26px;width:96px;height:96px;border-radius:50%;opacity:.28}
+
+/* 진도 막대 */
+.bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden;margin:0 0 12px}
+.bar > i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--mint),var(--sky));transition:width .5s}
+
+/* ── 문제 ── */
+.qhead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.pill{display:inline-block;font-family:'Jua',inherit;padding:5px 14px;border-radius:999px;background:var(--bg2);color:var(--sky-d);font-size:13px}
+.pill.warm{background:#FFF1E8;color:var(--peach-d)}
+.pill.good{background:#E7FAF2;color:var(--good)}
+.pill.bad{background:#FFEDF2;color:var(--bad)}
+.qtext{font-size:19px;line-height:1.7;margin:6px 0 14px;white-space:pre-wrap;word-break:keep-all}
+.qimg{max-width:100%;border-radius:18px;border:2px solid var(--line);background:#fff;margin:4px 0 14px;display:block}
+.choice{
+  display:flex;gap:11px;align-items:flex-start;width:100%;text-align:left;
+  background:#fff;border:2px solid var(--line);border-radius:20px;padding:13px 16px;margin:9px 0;
+  cursor:pointer;font-family:inherit;font-size:16.5px;color:var(--ink);line-height:1.6;
+  transition:transform .12s cubic-bezier(.34,1.56,.64,1), border-color .12s, background .12s;
+  word-break:keep-all;
+}
+.choice:hover{transform:translateX(4px);border-color:var(--lav)}
+.choice .no{
+  flex:0 0 28px;height:28px;border-radius:50%;background:var(--bg3);color:var(--lav-d);
+  display:grid;place-items:center;font-size:14px;margin-top:1px;
+}
+.choice.pick{border-color:var(--lav-d);background:#F8F4FF}
+.choice.hit{border-color:var(--mint-d);background:#EBFBF4}
+.choice.hit .no{background:var(--mint-d);color:#fff}
+.choice.miss{border-color:var(--pink-d);background:#FFF0F4}
+.choice.miss .no{background:var(--pink-d);color:#fff}
+.choice[disabled]{cursor:default}
+.choice[disabled]:hover{transform:none}
+.explain{
+  background:#FFFBF2;border:2px dashed #FFE2B8;border-radius:20px;padding:14px 16px;margin:12px 0 0;
+  white-space:pre-wrap;font-size:15px;line-height:1.75;color:#5C5468;word-break:keep-all;
+}
+.explain .h{color:var(--peach-d)}
+.explain img{max-width:100%;border-radius:14px;border:1px solid var(--line);background:#fff;margin-top:8px;display:block}
+.navrow{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:18px;flex-wrap:wrap}
+
+/* ── 시험 진행 점 ── */
+.dots{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 14px}
+.dots i{width:11px;height:11px;border-radius:50%;background:var(--line);display:block;transition:transform .15s}
+.dots i.done{background:var(--lav)}
+.dots i.now{background:var(--gold);transform:scale(1.4)}
+
+/* ── 결과 ── */
+.score{text-align:center;padding:8px 0 4px}
+.score .big{font-family:'Gaegu',sans-serif;font-size:64px;line-height:1;color:var(--lav-d)}
+.score .sub{color:var(--dim);font-size:15px}
+.stars{font-size:30px;letter-spacing:4px}
+.wrongItem{border-top:2px dashed var(--line);padding:16px 0 4px;margin-top:8px}
+.wrongItem:first-child{border-top:0;margin-top:0}
+
+/* ── 잠금 ── */
+#lock{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#FFF6F0,#F0F7FF 55%,#FBF2FF);
+  display:grid;place-items:center;padding:20px;overflow:auto}
+#lock .box{background:#fff;border-radius:32px;padding:30px 26px;max-width:430px;width:100%;
+  box-shadow:var(--sh-lg);text-align:center;border:2px solid #fff}
+#lock h2{font-family:'Gaegu',sans-serif;font-size:34px;margin:6px 0 4px}
+#lock .lead{color:var(--dim);font-size:14.5px;margin:0 0 18px}
+#lock input{width:100%;padding:14px 18px;border-radius:999px;border:2px solid var(--line);
+  font-family:inherit;font-size:18px;text-align:center;color:var(--ink);outline:none;letter-spacing:1px}
+#lock input:focus{border-color:var(--lav)}
+#lockMsg{min-height:26px;margin-top:14px;font-size:14.5px;color:var(--dim);line-height:1.6}
+
+.foot{text-align:center;color:var(--dim);font-size:12.5px;margin-top:30px;line-height:1.9}
+.notice{background:#FFF7E8;border:2px solid #FFE7B8;border-radius:18px;padding:12px 16px;font-size:14px;color:#7A6A45;word-break:keep-all}
+@media (max-width:520px){
+  .wrap{padding:14px 12px 90px}
+  .qtext{font-size:17.5px}
+  .choice{font-size:16px;padding:12px 14px}
+  .score .big{font-size:54px}
+}
+.figfail{background:#FFF0F4;border:2px dashed #FFC7D6;border-radius:16px;padding:12px 14px;
+  color:var(--bad);font-size:14px;margin:4px 0 14px}
+</style>
+</head>
+<!-- data-build 은 빌드할 때 build_lock.py 가 박는 배포 표식이다.
+     지금 올라간 것이 몇 번째 빌드인지 화면만 봐도 알 수 있고,
+     bank.enc 에 표식이 없을 때의 대비책으로도 쓴다. -->
+<body data-build="99168d9b">
+
+<!-- ══════════════ 잠금 화면 ══════════════ -->
+<div id="lock">
+  <div class="box">
+    <div style="font-size:52px;line-height:1">🌱</div>
+    <h2>신재생에너지 마스터</h2>
+    <p class="lead">태양광발전 필기 문제풀이 · <span id="lockN">…</span></p>
+    <input id="lockPw" type="password" inputmode="text" autocomplete="off" placeholder="코드를 넣어 주세요" aria-label="입장 코드">
+    <div style="margin-top:14px"><button class="btn" id="lockGo">열기</button></div>
+    <div id="lockMsg"></div>
+    <div class="lead" style="margin:18px 0 0;font-size:13px">
+      학생은 <b>선생님이 알려 준 8자리 숫자</b>를 넣으세요.<br>한 번 열면 이 기기에서는 다시 묻지 않아요.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 본체 ══════════════ -->
+<div class="wrap">
+
+  <!-- ── 홈 ── -->
+  <section id="scHome">
+    <div class="hero">
+      <h1><span class="sun">🌞</span> 신재생에너지 마스터</h1>
+      <p>신재생에너지발전설비기능사(태양광) 필기 · 적중예상문제 <b id="totN">0</b>문항</p>
+    </div>
+
+    <div class="card" id="rankBox"></div>
+
+    <div class="card">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:18px">🏁 종합시험 <span class="pill warm">20문항</span></div>
+          <div style="color:var(--dim);font-size:13.5px">전 단원에서 20문항. 채점은 <b>맨 마지막에</b> — 푸는 동안엔 정답도 점수도 안 보여요.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn peach" onclick="startExam('all')">종합시험 시작</button>
+          <button class="btn ghost sm" onclick="openWrong()">📕 오답노트 <span id="wrongN"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="chapList" class="grid"></div>
+
+    <div class="foot">
+      교재 <b>적중예상문제</b>를 그대로 옮긴 자료입니다. 그림·표는 원본을 그대로 씁니다.<br>
+      ⚠️ 교재 168쪽(관련 기기 및 부품 7~9번)은 원본 스캔에 빠져 있어 들어가지 못했습니다.
+    </div>
+  </section>
+
+  <!-- ── 배우기 ── -->
+  <section id="scLearn" class="hidden">
+    <div class="qhead" style="margin:18px 0 4px">
+      <button class="btn ghost sm" onclick="go('Home')">← 처음으로</button>
+      <span class="pill" id="learnTag"></span>
+    </div>
+    <div class="bar"><i id="learnBar" style="width:0%"></i></div>
+    <div class="card" id="learnBody"></div>
+    <div class="navrow">
+      <button class="btn ghost" id="learnPrev">← 이전</button>
+      <span class="pill" id="learnPos"></span>
+      <button class="btn sky" id="learnNext">다음 →</button>
+    </div>
+  </section>
+
+  <!-- ── 문제 풀기(연습·시험 공용) ── -->
+  <section id="scQuiz" class="hidden">
+    <div class="qhead" style="margin:18px 0 8px">
+      <button class="btn ghost sm" onclick="quitQuiz()">← 그만두기</button>
+      <span class="pill" id="quizTag"></span>
+      <span class="pill good" id="quizScore"></span>
+    </div>
+    <div class="dots" id="quizDots"></div>
+    <div class="card" id="quizBody"></div>
+    <div class="navrow">
+      <span></span>
+      <button class="btn mint hidden" id="quizNext">다음 →</button>
+    </div>
+  </section>
+
+  <!-- ── 결과 ── -->
+  <section id="scResult" class="hidden">
+    <div class="card" style="margin-top:20px">
+      <div class="score">
+        <div class="stars" id="resStars"></div>
+        <div class="big" id="resScore">0</div>
+        <div class="sub" id="resSub"></div>
+      </div>
+      <div id="resRank" style="margin-top:12px"></div>
+      <div class="navrow" id="resActs"></div>
+    </div>
+    <div class="card" id="resWrong"></div>
+  </section>
+
+  <!-- ── 오답노트 ── -->
+  <section id="scWrong" class="hidden">
+    <div class="qhead" style="margin:18px 0 8px">
+      <button class="btn ghost sm" onclick="go('Home')">← 처음으로</button>
+      <span class="pill bad">📕 오답노트</span>
+      <button class="btn ghost sm" onclick="clearWrong()">노트 비우기</button>
+    </div>
+    <div class="card" id="wrongBody"></div>
+  </section>
+
+</div>
+
+<script src="https://hongyul67-cpu.github.io/links/fx.js"></script>
+<script src="https://hongyul67-cpu.github.io/links/rank.js" data-tool="신재생에너지 마스터"></script>
+<script src="https://hongyul67-cpu.github.io/links/class-mode.js"></script>
+<script src="https://hongyul67-cpu.github.io/links/reset.js"></script>
+<script>
+/* =========================================================
+   신재생에너지 마스터 — 적중예상문제 풀이
+   문항 원본은 bank.enc(AES-GCM) 안에 있다. 잠금이 풀려야 BANK 가 채워진다.
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const KEY = 'sje_v1_';                      // 저장 키 앞머리
+let BANK = [];                              // [{part, chap, qs:[...]}]
+let FLAT = [];                              // 전 문항 평탄화 [{...q, chap, part, gi, qi}]
+
+/* ── 저장 ── */
+const load = (k,d)=>{ try{ return JSON.parse(localStorage.getItem(KEY+k)) ?? d; }catch(e){ return d; } };
+const save = (k,v)=>{ try{ localStorage.setItem(KEY+k, JSON.stringify(v)); }catch(e){} };
+
+/* ── 화면 전환 ── */
+const SCENES = ['Home','Learn','Quiz','Result','Wrong'];
+function go(name){
+  SCENES.forEach(s => $('sc'+s).classList.toggle('hidden', s!==name));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ── 잡동사니 ── */
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const CIRC = ['①','②','③','④'];
+
+/* 교재 그림은 enc/<파일명>.enc 에 잠겨 있다. src 를 바로 박지 않고 data-enc 만
+   달아 두었다가, 화면을 그린 뒤 fillImgs() 가 받아서 풀어 넣는다. */
+function imgTag(path, cls){
+  if(!path) return '';
+  const name = String(path).split('/').pop();
+  return '<img' + (cls ? ' class="'+cls+'"' : '') + ' data-enc="' + esc(name) + '" alt="교재 그림">';
+}
+
+/* 잠금이 풀리면 CK(내용키)가 여기 담긴다. 그림은 이 키로만 열린다. */
+let CK = null, BUILD = '';
+const imgCache = {};
+
+/* nonce(12바이트) + 암호문 형태로 봉해 둔 것을 내용키로 푼다 */
+function unseal(buf){
+  const u = new Uint8Array(buf);
+  return crypto.subtle.decrypt({name:'AES-GCM', iv:u.slice(0,12)}, CK, u.slice(12));
+}
+
+/* 방금 그린 화면 안의 교재 그림을 한 장씩 받아서 채운다.
+   ?b= 는 빌드 표식 — 없으면 브라우저가 옛 암호문을 캐시에서 꺼내 쓰고,
+   복호화가 조용히 실패해 그림이 빈 칸으로만 보인다. */
+function fillImgs(root){
+  if(!CK) return;
+  const els = (root || document).querySelectorAll('img[data-enc]:not([src])');
+  els.forEach(el=>{
+    const name = el.getAttribute('data-enc');
+    if(imgCache[name]){ el.src = imgCache[name]; return; }
+    fetch('enc/' + encodeURIComponent(name) + '.enc' + (BUILD ? '?b='+BUILD : ''), {cache:'force-cache'})
+      .then(r=>r.arrayBuffer()).then(unseal)
+      .then(plain=>{
+        const url = URL.createObjectURL(new Blob([plain], {type:'image/jpeg'}));
+        imgCache[name] = url; el.src = url;
+      })
+      .catch(()=>{
+        /* 조용히 빈 칸으로 두면 수업 중에 무슨 일인지 알 수 없다 */
+        const d = document.createElement('div');
+        d.className = 'figfail';
+        d.textContent = '그림을 열지 못했습니다 (' + name + ') — 새로고침해 보세요.';
+        el.replaceWith(d);
+      });
+  });
+}
+const PUFFS = ['var(--mint)','var(--peach)','var(--pink)','var(--lav)','var(--sky)'];
+function shuffle(a){ const x=a.slice(); for(let i=x.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [x[i],x[j]]=[x[j],x[i]]; } return x; }
+const qid = q => q.gi + '-' + q.qi;         // 문항 고유 id (묶음번호-문항번호)
+
+/* 문항 카드 한 장을 그린다. mode: 'learn'(정답 다 보임) | 'quiz' */
+function qCard(q, opt){
+  opt = opt || {};
+  let html = '<div class="qtext">'+esc(q.q)+'</div>' + imgTag(q.img,'qimg');
+  html += '<div id="'+(opt.listId||'chList')+'">';
+  q.ch.forEach((c,i)=>{
+    html += '<button class="choice" data-i="'+(i+1)+'"><span class="no">'+CIRC[i]+'</span><span>'+esc(c)+'</span></button>';
+  });
+  html += '</div>';
+  return html;
+}
+function exHtml(q){
+  const body = (q.ex||'').trim();
+  const im = imgTag(q.exImg);
+  if(!body && !im){
+    return '<div class="explain"><span class="h">정답 '+CIRC[q.a-1]+'</span>  '
+      + '<span style="color:var(--dim);font-size:13.5px">교재에 해설이 없는 문항이에요.</span></div>';
+  }
+  return '<div class="explain"><span class="h">정답 '+CIRC[q.a-1]+' · 해설</span>\n'
+    + esc(body) + im + '</div>';
+}
+
+/* =========================================================
+   홈
+   ========================================================= */
+function renderHome(){
+  $('totN').textContent = FLAT.length;
+  const seen = load('seen',{});             // 배우기에서 본 문항
+  const best = load('best',{});             // 단원별 최고 점수
+  $('chapList').innerHTML = BANK.map((g,gi)=>{
+    const ids = g.qs.map((q,qi)=>gi+'-'+qi);
+    const done = ids.filter(id=>seen[id]).length;
+    const pct = Math.round(done/ids.length*100);
+    const b = best[gi];
+    return '<div class="chap">'
+      + '<div class="puff" style="background:'+PUFFS[gi%PUFFS.length]+'"></div>'
+      + '<span class="tag">'+esc(g.part.split(' ').slice(0,2).join(' '))+'</span>'
+      + '<h3>'+esc(g.chap.replace(/^CHAPTER \d+\s*/,''))+'</h3>'
+      + '<div class="meta">'+g.qs.length+'문항 · 배우기 '+pct+'%'+(b!=null?' · 최고 '+b+'점':'')+'</div>'
+      + '<div class="bar"><i style="width:'+pct+'%"></i></div>'
+      + '<div class="acts">'
+      +   '<button class="btn sky sm" onclick="startLearn('+gi+')">📖 배우기</button>'
+      +   '<button class="btn mint sm" onclick="startPractice('+gi+')">✏️ 연습 8문항</button>'
+      + '</div></div>';
+  }).join('');
+  const w = load('wrong',[]);
+  $('wrongN').textContent = w.length ? '('+w.length+')' : '';
+  if(window.Rank && Rank.card) $('rankBox').innerHTML = Rank.card();
+  else $('rankBox').classList.add('hidden');
+}
+
+/* =========================================================
+   배우기 — 정답과 해설을 처음부터 다 보여 준다
+   ========================================================= */
+let LN = {gi:0, i:0};
+function startLearn(gi){
+  LN = {gi:gi, i: load('learnAt',{})[gi] || 0};
+  go('Learn'); drawLearn();
+}
+function drawLearn(){
+  const g = BANK[LN.gi], q = g.qs[LN.i];
+  const fq = Object.assign({}, q, {gi:LN.gi, qi:LN.i});
+  $('learnTag').textContent = g.chap.replace(/^CHAPTER \d+\s*/,'');
+  $('learnPos').textContent = (LN.i+1) + ' / ' + g.qs.length;
+  $('learnBar').style.width = Math.round((LN.i+1)/g.qs.length*100) + '%';
+
+  let html = '<div class="qhead"><span class="pill">'+q.no+'번</span></div>';
+  html += '<div class="qtext">'+esc(q.q)+'</div>' + imgTag(q.img,'qimg');
+  q.ch.forEach((c,i)=>{
+    const on = (i+1)===q.a;
+    html += '<div class="choice '+(on?'hit':'')+'" style="cursor:default"><span class="no">'+CIRC[i]+'</span><span>'+esc(c)+(on?' <b style="color:var(--mint-d)">← 정답</b>':'')+'</span></div>';
+  });
+  html += exHtml(q);
+  $('learnBody').innerHTML = html;
+  fillImgs($('learnBody'));
+
+  const seen = load('seen',{}); seen[qid(fq)] = 1; save('seen',seen);
+  const at = load('learnAt',{}); at[LN.gi] = LN.i; save('learnAt',at);
+
+  $('learnPrev').disabled = LN.i===0;
+  $('learnNext').textContent = (LN.i===g.qs.length-1) ? '다 봤어요 ✨' : '다음 →';
+}
+$('learnPrev').onclick = ()=>{ if(LN.i>0){ LN.i--; drawLearn(); } };
+$('learnNext').onclick = ()=>{
+  const g = BANK[LN.gi];
+  if(LN.i < g.qs.length-1){ LN.i++; drawLearn(); }
+  else {
+    if(window.FX && FX.banner) FX.banner('이 단원 배우기 완료! 🎉');
+    const at = load('learnAt',{}); at[LN.gi] = 0; save('learnAt',at);
+    renderHome(); go('Home');
+  }
+};
+
+/* =========================================================
+   문제 풀기 — 연습(즉시 채점) / 종합시험(끝나고 채점)
+   ========================================================= */
+let Q = null;
+function startPractice(gi){
+  const pool = FLAT.filter(q=>q.gi===gi);
+  Q = { mode:'practice', gi:gi,
+        label: BANK[gi].chap.replace(/^CHAPTER \d+\s*/,'') + ' — 연습',
+        list: shuffle(pool).slice(0, Math.min(8,pool.length)),
+        i:0, pick:[], t0:Date.now() };
+  go('Quiz'); drawQuiz();
+}
+function startExam(){
+  Q = { mode:'exam', gi:null, label:'종합시험',
+        list: shuffle(FLAT).slice(0, Math.min(20,FLAT.length)),
+        i:0, pick:[], t0:Date.now() };
+  go('Quiz'); drawQuiz();
+}
+function quitQuiz(){ if(confirm('그만두면 지금까지 푼 것은 저장되지 않아요. 나갈까요?')){ Q=null; renderHome(); go('Home'); } }
+
+function drawQuiz(){
+  const q = Q.list[Q.i], practice = Q.mode==='practice';
+  $('quizTag').textContent = Q.label;
+  /* 시험 중에는 점수를 감춘다 — 보이면 시험이 아니라 연습이 된다 */
+  const sc = $('quizScore');
+  if(practice){ sc.classList.remove('hidden'); sc.textContent = '맞은 개수 ' + Q.pick.filter((p,i)=>p===Q.list[i].a).length; }
+  else { sc.classList.add('hidden'); }
+
+  $('quizDots').innerHTML = Q.list.map((_,i)=>
+    '<i class="'+(i<Q.i?'done':'')+(i===Q.i?' now':'')+'"></i>').join('');
+
+  $('quizBody').innerHTML =
+    '<div class="qhead"><span class="pill">'+(Q.i+1)+' / '+Q.list.length+'</span>'
+    + (practice ? '<span class="pill warm">'+esc(q.chap.replace(/^CHAPTER \d+\s*/,''))+'</span>' : '')
+    + '</div>' + qCard(q);
+
+  fillImgs($('quizBody'));
+  $('quizNext').classList.add('hidden');
+  Array.from($('quizBody').querySelectorAll('.choice')).forEach(b=>{
+    b.onclick = ()=> answer(parseInt(b.dataset.i,10), b);
+  });
+}
+
+function answer(pickNo, el){
+  const q = Q.list[Q.i], practice = Q.mode==='practice';
+  Q.pick[Q.i] = pickNo;
+  const btns = Array.from($('quizBody').querySelectorAll('.choice'));
+  btns.forEach(b=>{ b.disabled = true; b.onclick = null; });
+
+  if(practice){
+    const ok = pickNo === q.a;
+    btns[q.a-1].classList.add('hit');
+    if(!ok) el.classList.add('miss');
+    if(window.FX){
+      if(ok){ FX.burst && FX.burst(el); FX.punch && FX.punch(el); }
+      else  { FX.shake && FX.shake(el); }
+    }
+    if(!ok) noteWrong(q, pickNo);
+    $('quizBody').insertAdjacentHTML('beforeend', exHtml(q));
+    fillImgs($('quizBody'));
+    $('quizScore').textContent = '맞은 개수 ' + Q.pick.filter((p,i)=>p===Q.list[i].a).length;
+  }else{
+    /* 시험 — 정답도 해설도 연출도 전부 감춘다 */
+    el.classList.add('pick');
+  }
+  const btn = $('quizNext');
+  btn.classList.remove('hidden');
+  btn.textContent = (Q.i === Q.list.length-1) ? '결과 보기 🏁' : '다음 →';
+  btn.onclick = ()=>{ if(Q.i < Q.list.length-1){ Q.i++; drawQuiz(); } else finish(); };
+}
+
+/* ── 오답노트 저장 ── */
+function noteWrong(q, pick){
+  const w = load('wrong',[]);
+  const id = qid(q);
+  const idx = w.findIndex(x=>x.id===id);
+  const row = {id:id, gi:q.gi, qi:q.qi, pick:pick, at:Date.now()};
+  if(idx>=0) w[idx] = row; else w.push(row);
+  save('wrong', w.slice(-300));
+}
+function dropWrong(q){
+  const w = load('wrong',[]).filter(x=>x.id!==qid(q));
+  save('wrong', w);
+}
+
+/* =========================================================
+   결과
+   ========================================================= */
+function finish(){
+  const total = Q.list.length;
+  const wrongs = [];
+  let correct = 0;
+  Q.list.forEach((q,i)=>{
+    if(Q.pick[i]===q.a){ correct++; if(Q.mode==='practice') dropWrong(q); }
+    else { wrongs.push({q:q, pick:Q.pick[i]}); if(Q.mode==='exam') noteWrong(q, Q.pick[i]); }
+  });
+  const score = Math.round(correct/total*100);
+  const dur = Math.round((Date.now()-Q.t0)/1000);
+
+  if(Q.gi!=null){ const b=load('best',{}); if((b[Q.gi]||0) < score){ b[Q.gi]=score; save('best',b); } }
+
+  $('resScore').textContent = score + '점';
+  $('resSub').textContent = Q.label + ' · ' + correct + ' / ' + total + '문항 · ' + Math.floor(dur/60) + '분 ' + (dur%60) + '초';
+  /* FX.starsFor 는 점수가 아니라 '틀린 개수'를 받아 별 개수(0~3)를 돌려준다 */
+  const missN = total - correct;
+  const starN = (window.FX && FX.starsFor) ? FX.starsFor(missN)
+              : (missN===0 ? 3 : missN<=2 ? 2 : missN<=5 ? 1 : 0);
+  $('resStars').textContent = '⭐'.repeat(starN) + '☆'.repeat(3-starN);
+
+  /* Rank.resultBox 는 award() 가 돌려준 결과 객체를 받아야 한다 */
+  let rankHtml = '';
+  if(window.Rank && Rank.award){
+    try{
+      const res = Rank.award(score, {mode:Q.label});
+      if(res && Rank.resultBox) rankHtml = Rank.resultBox(res);
+    }catch(e){}
+  }
+  $('resRank').innerHTML = rankHtml;
+
+  /* 오답노트 — 문제 그림 · 지문 · 내가 고른 답 · 정답 · 해설 */
+  $('resWrong').innerHTML = wrongs.length
+    ? '<h3 style="margin:0 0 6px">📕 틀린 문제 ' + wrongs.length + '개</h3>'
+      + '<div style="color:var(--dim);font-size:13.5px;margin-bottom:6px">오답노트에 저장했어요. 다음에 다시 볼 수 있어요.</div>'
+      + wrongs.map(w=>wrongCard(w.q, w.pick)).join('')
+    : '<div style="text-align:center;padding:10px 0"><div style="font-size:40px">🎊</div><b>다 맞았어요!</b></div>';
+
+  fillImgs($('resWrong'));
+  $('resActs').innerHTML =
+      '<button class="btn ghost" onclick="renderHome();go(\'Home\')">← 처음으로</button>'
+    + '<span id="submitAnchor"></span>'
+    + '<button class="btn" onclick="'+(Q.gi!=null?'startPractice('+Q.gi+')':'startExam()')+'">한 번 더 🔁</button>';
+
+  go('Result');
+  if(window.FX && FX.banner && score>=80) FX.banner(score===100 ? '만점! 대단해요 🏆' : '잘했어요! ✨');
+
+  /* 결과 제출 — 무엇을 틀렸는지까지 함께 보낸다 */
+  if(window.ResultCollector && ResultCollector.attach){
+    ResultCollector.attach(
+      $('submitAnchor'),
+      ()=>({ score:score, correct:correct, total:total, durationSec:dur,
+             wrong: wrongs.map(w=>w.q.chap.replace(/^CHAPTER \d+\s*/,'')+' '+w.q.no+'번 — '+shortQ(w.q)) }),
+      { mode:'신재생에너지 마스터 — ' + Q.label,
+        extra:['신재생에너지발전설비(태양광) 필기 문제풀이'] }
+    );
+  }
+}
+const shortQ = q => (q.q.split('\n')[0]).slice(0,28) + (q.q.length>28?'…':'');
+
+function wrongCard(q, pick){
+  const mine = pick ? CIRC[pick-1] + ' ' + esc(q.ch[pick-1]) : '<i style="color:var(--dim)">고르지 않음</i>';
+  return '<div class="wrongItem">'
+    + '<div class="qhead"><span class="pill warm">'+esc(q.chap.replace(/^CHAPTER \d+\s*/,''))+' '+q.no+'번</span></div>'
+    + '<div class="qtext" style="font-size:17px">'+esc(q.q)+'</div>' + imgTag(q.img,'qimg')
+    + '<div style="font-size:15px;line-height:1.9">'
+    +   '<span class="pill bad">내 답</span> ' + mine + '<br>'
+    +   '<span class="pill good">정답</span> ' + CIRC[q.a-1] + ' ' + esc(q.ch[q.a-1])
+    + '</div>' + exHtml(q) + '</div>';
+}
+
+/* =========================================================
+   오답노트
+   ========================================================= */
+function openWrong(){
+  const w = load('wrong',[]);
+  if(!w.length){
+    $('wrongBody').innerHTML = '<div style="text-align:center;padding:16px 0"><div style="font-size:42px">📗</div>'
+      + '<b>아직 틀린 문제가 없어요.</b><div style="color:var(--dim);font-size:14px">연습이나 시험을 풀면 여기에 쌓입니다.</div></div>';
+  }else{
+    const items = w.map(r=>{
+      const g = BANK[r.gi]; if(!g||!g.qs[r.qi]) return '';
+      const q = Object.assign({}, g.qs[r.qi], {gi:r.gi, qi:r.qi, chap:g.chap, part:g.part});
+      return wrongCard(q, r.pick);
+    }).filter(Boolean).join('');
+    $('wrongBody').innerHTML = '<h3 style="margin:0 0 10px">틀린 문제 '+w.length+'개</h3>' + items;
+  }
+  fillImgs($('wrongBody'));
+  go('Wrong');
+}
+function clearWrong(){ if(confirm('오답노트를 비울까요?')){ save('wrong',[]); openWrong(); renderHome(); } }
+
+/* =========================================================
+   잠금 해제
+   정적 호스팅에서는 화면 비밀번호가 보호가 되지 않는다(파일 주소를 직접 치면
+   그대로 받아진다). 그래서 문항 파일 자체를 AES-GCM 으로 암호화해 두고
+   여기서 WebCrypto 로 실제 복호화한다. 암호가 틀리면 복호화가 실패한다.
+
+   저장 키가 두 개인 이유 —
+     LOCK_KEY   이 도구에서 성공한 암호
+     SHARED_KEY 도구 전체 공용. 도구가 모두 같은 주소에 있어 localStorage 를
+                공유하므로 어디서든 한 번 열면 나머지도 그냥 열린다.
+   실패해도 공용 키는 지우지 않는다 — 여기서 안 맞는 암호가 다른 도구에서는
+   맞을 수 있어, 지우면 남의 기억까지 날리게 된다.
+   ========================================================= */
+const LOCK_KEY='sje_v1_pw', SHARED_KEY='hong_pw_v1';
+const b64 = x => Uint8Array.from(atob(x), c=>c.charCodeAt(0));
+const isoOf = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const mondayOf = d => { const x=new Date(d); x.setDate(x.getDate()-((x.getDay()+6)%7)); x.setHours(0,0,0,0); return x; };
+const prettyCode = c => c.slice(0,4)+' '+c.slice(4);
+let LOCK_INFO = null;
+
+/* 감싼 키들을 훑어 맞는 것을 찾는다. salt 를 공유하므로 PBKDF2 는 딱 1회 돈다. */
+async function findKey(kek, keys){
+  for(const k of keys){
+    try{
+      const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64(k.iv)}, kek, b64(k.blob));
+      return JSON.parse(new TextDecoder().decode(plain));
+    }catch(_){}
+  }
+  throw new Error('BADPW');
+}
+/* 교사용으로 열면 그 주 학생 코드를 계산해 보여 준다.
+   마스터 시크릿은 교사용으로 감싼 안쪽에만 있어 학생 코드로는 계산할 수 없다. */
+async function weekCode(msB64, mon){
+  const k = await crypto.subtle.importKey('raw', b64(msB64), {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', k,
+    new TextEncoder().encode((LOCK_INFO.prefix||'HONGW|') + isoOf(mon))));
+  const n = ((sig[0]<<24)>>>0) + (sig[1]<<16) + (sig[2]<<8) + sig[3];
+  return String(n % 90000000 + 10000000);
+}
+
+async function unlockBank(pw, quiet){
+  const msg = $('lockMsg');
+  const say = (t,c)=>{ if(!quiet || c==='bad'){ msg.innerHTML=t;
+    msg.style.color = c==='bad' ? 'var(--bad)' : (c==='ok' ? 'var(--good)' : 'var(--dim)'); } };
+  try{
+    say('여는 중…');
+    const blob = await (await fetch('bank.enc',{cache:'no-store'})).json();
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+    const kek = await crypto.subtle.deriveKey(
+      {name:'PBKDF2', salt:b64(blob.kdf.salt), iterations:blob.kdf.iter, hash:'SHA-256'},
+      base, {name:'AES-GCM', length:256}, false, ['decrypt']);
+    const info = await findKey(kek, blob.keys);
+    const today = isoOf(new Date());
+    if(info.nbf && today < info.nbf){ const e=new Error('NOTYET'); e.when=info.nbf; throw e; }
+    if(info.exp && today >= info.exp){ const e=new Error('EXPIRED'); e.when=info.exp; throw e; }
+    LOCK_INFO = info;
+
+    CK = await crypto.subtle.importKey('raw', b64(info.ck), {name:'AES-GCM'}, false, ['decrypt']);
+    BUILD = blob.build || document.body.dataset.build || '';
+    const sealed = b64(blob.data);
+    const plain = await unseal(sealed);
+    const ds = new DecompressionStream('gzip');
+    const txt = await new Response(new Blob([plain]).stream().pipeThrough(ds)).text();
+
+    BANK = JSON.parse(txt);
+    FLAT = [];
+    BANK.forEach((g,gi)=> g.qs.forEach((q,qi)=>
+      FLAT.push(Object.assign({}, q, {gi:gi, qi:qi, chap:g.chap, part:g.part}))));
+
+    try{
+      localStorage.setItem(LOCK_KEY, pw);
+      if(!info.exp) localStorage.setItem(SHARED_KEY, pw);   // 만료되는 코드는 공용에 넣지 않는다
+    }catch(e){}
+
+    let extra = '';
+    if(!quiet && info.role==='teacher' && info.ms){
+      const c = await weekCode(info.ms, mondayOf(new Date()));
+      extra = '<br><b style="color:var(--gold)">이번 주 학생 코드 — ' + prettyCode(c) + '</b>';
+    }
+    say('✅ ' + FLAT.length + '문항이 열렸어요!' + extra, 'ok');
+    $('lockPw').value = '';
+    renderHome();
+    setTimeout(()=>{ $('lock').classList.add('hidden'); }, extra ? 2600 : 500);
+    return true;
+  }catch(e){
+    const m = e && e.message;
+    if(m==='EXPIRED')     say('사용 기간이 끝난 코드예요('+e.when+'까지). 선생님께 이번 주 코드를 받으세요.','bad');
+    else if(m==='NOTYET') say('아직 쓸 수 없는 코드예요. '+e.when+'부터 쓸 수 있어요.','bad');
+    else                  say('코드가 맞지 않아요.','bad');
+    try{ localStorage.removeItem(LOCK_KEY); }catch(_){}     // 공용 키는 건드리지 않는다
+    return false;
+  }
+}
+$('lockGo').onclick = ()=> unlockBank($('lockPw').value.replace(/\s+/g,''));
+$('lockPw').addEventListener('keydown', e=>{ if(e.key==='Enter') $('lockGo').click(); });
+
+/* 문항 수 표시 + 이전에 열었으면 조용히 자동 해제 */
+fetch('bank.enc',{cache:'no-store'}).then(r=>r.json())
+  .then(b=>{ $('lockN').textContent = (b.n||'') + '문항'; })
+  .catch(()=>{ $('lockN').textContent = '(준비 중)'; });
+
+(function(){
+  try{
+    const a = localStorage.getItem(LOCK_KEY), b = localStorage.getItem(SHARED_KEY), t = [];
+    if(a) t.push(a);
+    if(b && b!==a) t.push(b);
+    (function next(i){
+      if(i>=t.length) return;
+      unlockBank(t[i], true).then(ok=>{ if(!ok) next(i+1); });
+    })(0);
+  }catch(e){}
+})();
+</script>
+<script src="https://hongyul67-cpu.github.io/links/collector.js" data-tool="신재생에너지 마스터"></script>
+</body>
+</html>
