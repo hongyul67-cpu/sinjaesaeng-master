@@ -29,20 +29,27 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "_weekly"))
 import weekly                                   # 도구 공용 주간 코드
-SRC = os.path.join(HERE, "bank_book.js")
 OUT = os.path.join(HERE, "bank.enc")
 ITER = 200_000
 
 
-def extract_json(js_text):
-    """bank_book.js 의 배열 리터럴만 뽑아 JSON 으로 바꾼다 (node 로 평가해서 안전하게)."""
+def extract_json():
+    """문항(bank_book.js)과 개념(concept_book.js)을 node 로 평가해 한 덩어리 JSON 으로 만든다.
+
+    두 파일을 하나의 payload 로 묶는 이유 — 잠금은 하나뿐인데 파일을 나누면
+    암호문도 둘이 되고, 다시 빌드할 때 한쪽만 올라가는 사고가 난다."""
     import subprocess, tempfile
-    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
-        f.write(js_text.replace("if(typeof window!=='undefined')window.BOOK_BANK=BOOK_BANK;", ""))
-        f.write("\nprocess.stdout.write(JSON.stringify(BOOK_BANK));\n")
+    driver = (
+        "const bank = require('./bank_book.js');\n"
+        "const concept = require('./concept_book.js');\n"
+        "process.stdout.write(JSON.stringify({v:1, bank:bank, concept:concept}));\n"
+    )
+    with tempfile.NamedTemporaryFile("w", suffix=".js", dir=HERE, delete=False, encoding="utf-8") as f:
+        f.write(driver)
         tmp = f.name
     try:
-        r = subprocess.run(["node", tmp], capture_output=True, text=True, encoding="utf-8")
+        r = subprocess.run(["node", tmp], capture_output=True, text=True,
+                           encoding="utf-8", cwd=HERE)
         if r.returncode:
             raise SystemExit("node 평가 실패:\n" + r.stderr)
         return r.stdout
@@ -59,9 +66,10 @@ def main():
     start = date.fromisoformat(cfg["epoch"])
     nweeks = cfg["weeks"]
 
-    js = io.open(SRC, encoding="utf-8").read()
-    payload = extract_json(js)
-    items = json.loads(payload)
+    payload = extract_json()
+    data = json.loads(payload)
+    items = data["bank"]
+    concept = data["concept"]
     raw = payload.encode("utf-8")
     gz = gzip.compress(raw, 9)
 
@@ -124,6 +132,7 @@ def main():
     io.open(OUT, "w", encoding="utf-8").write(json.dumps({
         "v": 2, "cipher": "AES-GCM", "gz": True, "n": sum(len(g["qs"]) for g in items),
         "build": build_id, "imgs": nimg,
+        "secs": sum(len(c["secs"]) for c in concept),
         "kdf": {"name": "PBKDF2", "hash": "SHA-256", "iter": ITER,
                 "salt": base64.b64encode(salt).decode()},
         "data": base64.b64encode(body).decode(),
@@ -143,6 +152,7 @@ def main():
     nq = sum(len(g["qs"]) for g in items)
     print("  단원 %d개 · 문항 %d개 · 원본 %dKB -> gzip %dKB -> bank.enc %dKB"
           % (len(items), nq, len(raw) // 1024, len(gz) // 1024, os.path.getsize(OUT) // 1024))
+    print("  개념 %d단원 · %d섹션" % (len(concept), sum(len(c["secs"]) for c in concept)))
     print("  교재 그림 %d장 -> enc/*.enc  (빌드 표식 %s)" % (nimg, build_id))
     print("")
     print("  교사용 암호 : %s   (만료 없음)" % a.pw)

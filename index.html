@@ -161,6 +161,31 @@ body{
   .choice{font-size:16px;padding:12px 14px}
   .score .big{font-size:54px}
 }
+/* ── 개념 ── */
+.cpSec{padding:20px 22px 18px}
+.cpT{margin:0;font-family:'Jua',inherit;font-weight:400;font-size:21px;color:var(--lav-d);word-break:keep-all}
+.cpH{margin:16px 0 6px;font-family:'Jua',inherit;font-weight:400;font-size:16.5px;color:var(--peach-d)}
+.cpH:first-of-type{margin-top:10px}
+.cpP{margin:6px 0;font-size:15.5px;line-height:1.8;word-break:keep-all}
+.cpUl{margin:4px 0 8px;padding-left:20px}
+.cpUl li{font-size:15.5px;line-height:1.8;margin:3px 0;word-break:keep-all}
+.cpUl li::marker{color:var(--mint-d)}
+.cpKV{display:grid;grid-template-columns:minmax(96px,auto) 1fr;gap:4px 14px;
+  padding:8px 12px;margin:5px 0;border-radius:14px;background:#FAFAFF;font-size:15px;line-height:1.75}
+.cpKV .k{color:var(--lav-d);word-break:keep-all}
+.cpKV .v{color:var(--ink);word-break:keep-all}
+.cpF{margin:8px 0;padding:11px 16px;border-radius:16px;background:#EEF8FF;border:2px solid #DCEEFB;
+  color:var(--sky-d);font-size:15.5px;line-height:1.8;word-break:keep-all;overflow-x:auto}
+.cpTip{margin:14px 0 0;padding:11px 15px;border-radius:16px;background:#FFF7E8;
+  border:2px dashed #FFE0A8;font-size:14.5px;line-height:1.7;color:#7A6A45;word-break:keep-all}
+.cpTip b{color:var(--gold)}
+.key{color:var(--lav-d);font-weight:600}
+/* 가린 빈칸 — 눌러서 하나씩 연다 */
+.bl{display:inline-block;min-width:3.4em;padding:0 6px;border-radius:8px;cursor:pointer;
+  background:var(--lav);color:transparent;border-bottom:2px solid var(--lav-d);
+  transition:background .15s,color .15s}
+.bl:hover{background:#B79EFF}
+.bl.on{background:#EFE8FF;color:var(--lav-d);font-weight:600;cursor:default}
 .figfail{background:#FFF0F4;border:2px dashed #FFC7D6;border-radius:16px;padding:12px 14px;
   color:var(--bad);font-size:14px;margin:4px 0 14px}
 </style>
@@ -168,7 +193,7 @@ body{
 <!-- data-build 은 빌드할 때 build_lock.py 가 박는 배포 표식이다.
      지금 올라간 것이 몇 번째 빌드인지 화면만 봐도 알 수 있고,
      bank.enc 에 표식이 없을 때의 대비책으로도 쓴다. -->
-<body data-build="99168d9b">
+<body data-build="cd47509a">
 
 <!-- ══════════════ 잠금 화면 ══════════════ -->
 <div id="lock">
@@ -215,6 +240,20 @@ body{
     <div class="foot">
       교재 <b>적중예상문제</b>를 그대로 옮긴 자료입니다. 그림·표는 원본을 그대로 씁니다.<br>
       ⚠️ 교재 168쪽(관련 기기 및 부품 7~9번)은 원본 스캔에 빠져 있어 들어가지 못했습니다.
+    </div>
+  </section>
+
+  <!-- ── 개념 ── -->
+  <section id="scConcept" class="hidden">
+    <div class="qhead" style="margin:18px 0 8px">
+      <button class="btn ghost sm" onclick="go('Home')">← 처음으로</button>
+      <span class="pill" id="cpTag"></span>
+      <button class="btn ghost sm" id="cpMask">🙈 빈칸으로 가리기</button>
+    </div>
+    <div id="cpBody"></div>
+    <div class="navrow">
+      <button class="btn ghost" id="cpPrev">← 이전 단원</button>
+      <button class="btn sky" id="cpNext">다음 단원 →</button>
     </div>
   </section>
 
@@ -286,6 +325,7 @@ body{
 const $ = id => document.getElementById(id);
 const KEY = 'sje_v1_';                      // 저장 키 앞머리
 let BANK = [];                              // [{part, chap, qs:[...]}]
+let CONCEPT = [];                           // [{gi, secs:[{t,tip,q,body}]}]
 let FLAT = [];                              // 전 문항 평탄화 [{...q, chap, part, gi, qi}]
 
 /* ── 저장 ── */
@@ -293,7 +333,7 @@ const load = (k,d)=>{ try{ return JSON.parse(localStorage.getItem(KEY+k)) ?? d; 
 const save = (k,v)=>{ try{ localStorage.setItem(KEY+k, JSON.stringify(v)); }catch(e){} };
 
 /* ── 화면 전환 ── */
-const SCENES = ['Home','Learn','Quiz','Result','Wrong'];
+const SCENES = ['Home','Concept','Learn','Quiz','Result','Wrong'];
 function go(name){
   SCENES.forEach(s => $('sc'+s).classList.toggle('hidden', s!==name));
   window.scrollTo({top:0,behavior:'smooth'});
@@ -390,6 +430,7 @@ function renderHome(){
       + '<div class="meta">'+g.qs.length+'문항 · 배우기 '+pct+'%'+(b!=null?' · 최고 '+b+'점':'')+'</div>'
       + '<div class="bar"><i style="width:'+pct+'%"></i></div>'
       + '<div class="acts">'
+      +   (cpOf(gi) ? '<button class="btn peach sm" onclick="openConcept('+gi+')">📚 개념</button>' : '')
       +   '<button class="btn sky sm" onclick="startLearn('+gi+')">📖 배우기</button>'
       +   '<button class="btn mint sm" onclick="startPractice('+gi+')">✏️ 연습 8문항</button>'
       + '</div></div>';
@@ -569,10 +610,15 @@ function finish(){
     : '<div style="text-align:center;padding:10px 0"><div style="font-size:40px">🎊</div><b>다 맞았어요!</b></div>';
 
   fillImgs($('resWrong'));
+  /* 개념에서 들어왔으면, 돌아갈 곳도 다시 풀 것도 그 개념이어야 한다 */
+  const again = Q.from ? 'practiceOnly('+Q.from.gi+','+Q.from.si+')'
+              : (Q.gi!=null ? 'startPractice('+Q.gi+')' : 'startExam()');
+  const back  = Q.from ? '<button class="btn ghost" onclick="openConcept('+Q.from.gi+')">← 개념으로</button>'
+              : '<button class="btn ghost" onclick="renderHome();go(\'Home\')">← 처음으로</button>';
   $('resActs').innerHTML =
-      '<button class="btn ghost" onclick="renderHome();go(\'Home\')">← 처음으로</button>'
+      back
     + '<span id="submitAnchor"></span>'
-    + '<button class="btn" onclick="'+(Q.gi!=null?'startPractice('+Q.gi+')':'startExam()')+'">한 번 더 🔁</button>';
+    + '<button class="btn" onclick="'+again+'">한 번 더 🔁</button>';
 
   go('Result');
   if(window.FX && FX.banner && score>=80) FX.banner(score===100 ? '만점! 대단해요 🏆' : '잘했어요! ✨');
@@ -621,6 +667,115 @@ function openWrong(){
   go('Wrong');
 }
 function clearWrong(){ if(confirm('오답노트를 비울까요?')){ save('wrong',[]); openWrong(); renderHome(); } }
+
+/* =========================================================
+   개념 — 교재 해설·도표에서 뽑아 단원별로 정리한 것
+   본문은 가벼운 표기법으로 적혀 있다(concept_book.js 머리말 참고).
+   ========================================================= */
+let CP = { gi:0, mask:false };
+
+const cpOf = gi => CONCEPT.find(c => c.gi === gi);
+
+/* {{핵심어}} → 가리기를 켜면 눌러서 여는 빈칸이 된다 */
+function cpBlanks(html){
+  return html.replace(/\{\{([^}]+)\}\}/g, (_, w) =>
+    CP.mask ? '<b class="bl" tabindex="0" role="button" data-w="'+esc(w)+'">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>'
+            : '<b class="key">'+esc(w)+'</b>');
+}
+
+/* 한 줄씩 보면서 표기법을 HTML 로 바꾼다.
+   esc() 를 먼저 걸고 그 뒤에 우리 표기만 태그로 되살리는 순서라, 본문에 <> 가 있어도 안전하다. */
+function cpBody(src){
+  const out = [];
+  let ul = null;
+  const flush = () => { if(ul){ out.push('<ul class="cpUl">'+ul.join('')+'</ul>'); ul = null; } };
+
+  src.split('\n').forEach(raw => {
+    const line = raw.trimEnd();
+    if(!line.trim()){ flush(); return; }
+
+    const img = line.trim().match(/^\[(img\/[^\]]+)\]$/);
+    if(img){ flush(); out.push(imgTag(img[1], 'qimg')); return; }
+
+    if(line.startsWith('# ')){ flush(); out.push('<h4 class="cpH">'+cpBlanks(esc(line.slice(2)))+'</h4>'); return; }
+
+    if(line.startsWith('= ')){ flush(); out.push('<div class="cpF">'+cpBlanks(esc(line.slice(2)))+'</div>'); return; }
+
+    if(line.startsWith('* ')){
+      flush();
+      const m = line.slice(2).split(' :: ');
+      out.push('<div class="cpKV"><span class="k">'+cpBlanks(esc(m[0]))+'</span>'
+             + '<span class="v">'+cpBlanks(esc(m.slice(1).join(' :: ')))+'</span></div>');
+      return;
+    }
+    if(line.startsWith('- ')){ (ul = ul || []).push('<li>'+cpBlanks(esc(line.slice(2)))+'</li>'); return; }
+
+    /* 이어지는 들여쓴 줄은 바로 앞 항목에 붙인다 */
+    if(/^\s{2,}/.test(raw) && out.length){
+      out[out.length-1] = out[out.length-1].replace(/<\/(div|p)>$/, '<br>'+cpBlanks(esc(line.trim()))+'</$1>');
+      return;
+    }
+    flush();
+    out.push('<p class="cpP">'+cpBlanks(esc(line)).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')+'</p>');
+  });
+  flush();
+  return out.join('');
+}
+
+function openConcept(gi){
+  if(!cpOf(gi)) return;
+  CP.gi = gi;
+  renderConcept();
+  go('Concept');
+}
+
+function renderConcept(){
+  const c = cpOf(CP.gi), g = BANK[CP.gi];
+  $('cpTag').textContent = g.chap.replace(/^CHAPTER \d+\s*/,'');
+  $('cpMask').textContent = CP.mask ? '👀 답 보이기' : '🙈 빈칸으로 가리기';
+
+  $('cpBody').innerHTML = c.secs.map((s,i)=>
+      '<div class="card cpSec">'
+    +   '<div class="qhead"><h3 class="cpT">'+esc(s.t)+'</h3>'
+    +     '<span class="pill">'+(i+1)+' / '+c.secs.length+'</span></div>'
+    +   cpBody(s.body)
+    +   (s.tip ? '<div class="cpTip"><b>시험에는</b> '+esc(s.tip)+'</div>' : '')
+    +   (s.q && s.q.length
+        ? '<div style="margin-top:12px"><button class="btn mint sm" onclick="practiceOnly('+CP.gi+','+i+')">'
+          + '✏️ 이 개념만 '+s.q.length+'문항 풀어보기</button></div>'
+        : '')
+    + '</div>').join('');
+
+  fillImgs($('cpBody'));
+
+  /* 빈칸은 눌러서 하나씩 연다 */
+  $('cpBody').querySelectorAll('.bl').forEach(b=>{
+    const open = ()=>{ b.textContent = b.dataset.w; b.classList.add('on'); };
+    b.onclick = open;
+    b.onkeydown = e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } };
+  });
+
+  const idx = CONCEPT.findIndex(x=>x.gi===CP.gi);
+  $('cpPrev').disabled = idx <= 0;
+  $('cpNext').disabled = idx >= CONCEPT.length-1;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+$('cpMask').onclick = ()=>{ CP.mask = !CP.mask; renderConcept(); };
+$('cpPrev').onclick = ()=>{ const i=CONCEPT.findIndex(x=>x.gi===CP.gi); if(i>0){ CP.gi=CONCEPT[i-1].gi; renderConcept(); } };
+$('cpNext').onclick = ()=>{ const i=CONCEPT.findIndex(x=>x.gi===CP.gi); if(i<CONCEPT.length-1){ CP.gi=CONCEPT[i+1].gi; renderConcept(); } };
+
+/* 방금 읽은 개념에 딸린 문항만 골라 바로 풀어 본다 */
+function practiceOnly(gi, si){
+  const sec = cpOf(gi).secs[si];
+  const want = new Set(sec.q);
+  const list = FLAT.filter(q => q.gi===gi && want.has(q.no));
+  if(!list.length) return;
+  Q = { mode:'practice', gi:gi, from:{gi:gi, si:si},
+        label: sec.t + ' — 개념 확인',
+        list: shuffle(list), i:0, pick:[], t0:Date.now() };
+  go('Quiz'); drawQuiz();
+}
 
 /* =========================================================
    잠금 해제
@@ -686,7 +841,10 @@ async function unlockBank(pw, quiet){
     const ds = new DecompressionStream('gzip');
     const txt = await new Response(new Blob([plain]).stream().pipeThrough(ds)).text();
 
-    BANK = JSON.parse(txt);
+    /* payload = {v, bank, concept}. 예전 형식(배열 하나)도 열리게 둔다. */
+    const payload = JSON.parse(txt);
+    BANK = Array.isArray(payload) ? payload : payload.bank;
+    CONCEPT = Array.isArray(payload) ? [] : (payload.concept || []);
     FLAT = [];
     BANK.forEach((g,gi)=> g.qs.forEach((q,qi)=>
       FLAT.push(Object.assign({}, q, {gi:gi, qi:qi, chap:g.chap, part:g.part}))));
