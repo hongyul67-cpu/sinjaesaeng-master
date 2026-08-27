@@ -195,7 +195,7 @@ body{
 <!-- data-build 은 빌드할 때 build_lock.py 가 박는 배포 표식이다.
      지금 올라간 것이 몇 번째 빌드인지 화면만 봐도 알 수 있고,
      bank.enc 에 표식이 없을 때의 대비책으로도 쓴다. -->
-<body data-build="cd47509a">
+<body data-build="97f10b11">
 
 <!-- ══════════════ 잠금 화면 ══════════════ -->
 <div id="lock">
@@ -219,7 +219,7 @@ body{
   <section id="scHome">
     <div class="hero">
       <h1><span class="sun">🌞</span> 신재생에너지 마스터</h1>
-      <p>신재생에너지발전설비기능사(태양광) 필기 · 적중예상문제 <b id="totN">0</b>문항</p>
+      <p>신재생에너지발전설비기능사(태양광) 필기 · 적중예상문제 <b id="totN">0</b>문항 · 기출 <b id="exN">0</b>문항</p>
     </div>
 
     <div class="card" id="rankBox"></div>
@@ -239,9 +239,20 @@ body{
 
     <div id="chapList" class="grid"></div>
 
+    <!-- 기출은 회차 그대로 푸는 것이라 단원 목록과 섞지 않고 따로 둔다.
+         배우기를 앞에 두고 시험을 뒤에 두는 순서는 적중예상문제 쪽과 같다. -->
+    <div id="examWrap" class="hidden">
+      <h2 style="margin:26px 0 10px;font-size:20px">📜 기출문제 <span class="pill warm" id="examRoundN"></span></h2>
+      <div style="color:var(--dim);font-size:13.5px;margin:-4px 0 12px">
+        회차를 골라 <b>배우기</b>로 정답·해설을 먼저 보고, 준비되면 <b>회차 시험</b>으로 60문항을 실제 시험처럼 풀어 보세요.
+      </div>
+      <div id="examList" class="grid"></div>
+    </div>
+
     <div class="foot">
-      교재 <b>적중예상문제</b>를 그대로 옮긴 자료입니다. 그림·표는 원본을 그대로 씁니다.<br>
-      ⚠️ 교재 168쪽(관련 기기 및 부품 7~9번)은 원본 스캔에 빠져 있어 들어가지 못했습니다.
+      교재 <b>적중예상문제</b>와 <b>과년도·최근 기출(복원)문제</b>를 그대로 옮긴 자료입니다. 그림·표는 원본을 그대로 씁니다.<br>
+      ⚠️ 교재 168쪽(관련 기기 및 부품 7~9번)은 원본 스캔에 빠져 있어 들어가지 못했습니다.<br>
+      ⚠️ 기출은 회차마다 60문항이 아닙니다 — 법령 개정으로 교재가 뺀 번호가 있어 번호를 원본 그대로 두었습니다.
     </div>
   </section>
 
@@ -329,6 +340,14 @@ const KEY = 'sje_v1_';                      // 저장 키 앞머리
 let BANK = [];                              // [{part, chap, qs:[...]}]
 let CONCEPT = [];                           // [{gi, secs:[{t,tip,q,body}]}]
 let FLAT = [];                              // 전 문항 평탄화 [{...q, chap, part, gi, qi}]
+let EXAM = [];                              // 기출 회차 [{chap, part, year, round, qs:[...]}]
+let EFLAT = [];                             // 기출 전 문항 평탄화
+
+/* 문항이 어느 묶음에서 왔는지 gi 하나로 가린다.
+   적중예상문제는 숫자(BANK 의 자리), 기출은 'x0' 같은 문자열(EXAM 의 자리)이다.
+   섞이지 않아야 오답노트가 엉뚱한 문항을 되살리지 않는다. */
+const isX = gi => typeof gi === 'string' && gi[0] === 'x';
+const grp = gi => isX(gi) ? EXAM[+gi.slice(1)] : BANK[gi];
 
 /* ── 저장 ── */
 const load = (k,d)=>{ try{ return JSON.parse(localStorage.getItem(KEY+k)) ?? d; }catch(e){ return d; } };
@@ -437,6 +456,27 @@ function renderHome(){
       +   '<button class="btn mint sm" onclick="startPractice('+gi+')">✏️ 연습 8문항</button>'
       + '</div></div>';
   }).join('');
+  /* ── 기출 회차 ── */
+  $('exN').textContent = EFLAT.length;
+  $('examWrap').classList.toggle('hidden', !EXAM.length);
+  $('examRoundN').textContent = EXAM.length + '회차';
+  $('examList').innerHTML = EXAM.map((g,ei)=>{
+    const key = 'x'+ei;
+    const done = g.qs.filter((q,qi)=>seen[key+'-'+qi]).length;
+    const pct = Math.round(done/g.qs.length*100);
+    const b = best[key];
+    return '<div class="chap">'
+      + '<div class="puff" style="background:'+PUFFS[ei%PUFFS.length]+'"></div>'
+      + '<span class="tag">'+esc(g.year+'년')+'</span>'
+      + '<h3>'+esc(g.chap.replace(/^\d{4}년\s*/,''))+'</h3>'
+      + '<div class="meta">'+g.qs.length+'문항 · 배우기 '+pct+'%'+(b!=null?' · 최고 '+b+'점':'')+'</div>'
+      + '<div class="bar"><i style="width:'+pct+'%"></i></div>'
+      + '<div class="acts">'
+      +   '<button class="btn sky sm" onclick="startLearn(\''+key+'\')">📖 배우기</button>'
+      +   '<button class="btn peach sm" onclick="startRoundExam('+ei+')">🏁 회차 시험</button>'
+      + '</div></div>';
+  }).join('');
+
   const w = load('wrong',[]);
   $('wrongN').textContent = w.length ? '('+w.length+')' : '';
   if(window.Rank && Rank.card) $('rankBox').innerHTML = Rank.card();
@@ -452,7 +492,7 @@ function startLearn(gi){
   go('Learn'); drawLearn();
 }
 function drawLearn(){
-  const g = BANK[LN.gi], q = g.qs[LN.i];
+  const g = grp(LN.gi), q = g.qs[LN.i];
   const fq = Object.assign({}, q, {gi:LN.gi, qi:LN.i});
   $('learnTag').textContent = g.chap.replace(/^CHAPTER \d+\s*/,'');
   $('learnPos').textContent = (LN.i+1) + ' / ' + g.qs.length;
@@ -476,10 +516,10 @@ function drawLearn(){
 }
 $('learnPrev').onclick = ()=>{ if(LN.i>0){ LN.i--; drawLearn(); } };
 $('learnNext').onclick = ()=>{
-  const g = BANK[LN.gi];
+  const g = grp(LN.gi);
   if(LN.i < g.qs.length-1){ LN.i++; drawLearn(); }
   else {
-    if(window.FX && FX.banner) FX.banner('이 단원 배우기 완료! 🎉');
+    if(window.FX && FX.banner) FX.banner(isX(LN.gi) ? '이 회차 배우기 완료! 🎉' : '이 단원 배우기 완료! 🎉');
     const at = load('learnAt',{}); at[LN.gi] = 0; save('learnAt',at);
     renderHome(); go('Home');
   }
@@ -503,6 +543,15 @@ function startExam(){
         i:0, pick:[], t0:Date.now() };
   go('Quiz'); drawQuiz();
 }
+/* 기출 회차 시험 — 실제 시험처럼 그 회차 전 문항을 교재 번호 순서 그대로 낸다.
+   섞지 않는 이유: 회차를 통째로 풀어 보는 것이 목적이라 순서도 시험지 그대로여야 한다. */
+function startRoundExam(ei){
+  const g = EXAM[ei];
+  Q = { mode:'exam', gi:'x'+ei, label: g.chap,
+        list: EFLAT.filter(q=>q.gi==='x'+ei),
+        i:0, pick:[], t0:Date.now(), again:'startRoundExam('+ei+')' };
+  go('Quiz'); drawQuiz();
+}
 function quitQuiz(){ if(confirm('그만두면 지금까지 푼 것은 저장되지 않아요. 나갈까요?')){ Q=null; renderHome(); go('Home'); } }
 
 function drawQuiz(){
@@ -519,6 +568,8 @@ function drawQuiz(){
   $('quizBody').innerHTML =
     '<div class="qhead"><span class="pill">'+(Q.i+1)+' / '+Q.list.length+'</span>'
     + (practice ? '<span class="pill warm">'+esc(q.chap.replace(/^CHAPTER \d+\s*/,''))+'</span>' : '')
+    /* 기출은 교재가 뺀 번호가 있어 자리 번호와 교재 번호가 어긋난다. 교재 번호를 같이 보여 준다. */
+    + (isX(Q.gi) ? '<span class="pill">교재 '+q.no+'번</span>' : '')
     + '</div>' + qCard(q);
 
   fillImgs($('quizBody'));
@@ -613,7 +664,9 @@ function finish(){
 
   fillImgs($('resWrong'));
   /* 개념에서 들어왔으면, 돌아갈 곳도 다시 풀 것도 그 개념이어야 한다 */
-  const again = Q.from ? 'practiceOnly('+Q.from.gi+','+Q.from.si+')'
+  /* Q.again 이 있으면 그대로 쓴다 — 기출 회차는 gi 가 'x0' 라 startPractice 에 넣을 수 없다 */
+  const again = Q.again ? Q.again
+              : Q.from ? 'practiceOnly('+Q.from.gi+','+Q.from.si+')'
               : (Q.gi!=null ? 'startPractice('+Q.gi+')' : 'startExam()');
   const back  = Q.from ? '<button class="btn ghost" onclick="openConcept('+Q.from.gi+')">← 개념으로</button>'
               : '<button class="btn ghost" onclick="renderHome();go(\'Home\')">← 처음으로</button>';
@@ -630,7 +683,7 @@ function finish(){
     ResultCollector.attach(
       $('submitAnchor'),
       ()=>({ score:score, correct:correct, total:total, durationSec:dur,
-             wrong: wrongs.map(w=>w.q.chap.replace(/^CHAPTER \d+\s*/,'')+' '+w.q.no+'번 — '+shortQ(w.q)) }),
+             wrong: wrongs.map(w=>tagOf(w.q)+' '+w.q.no+'번 — '+shortQ(w.q)) }),
       { mode:'신재생에너지 마스터 — ' + Q.label,
         extra:['신재생에너지발전설비(태양광) 필기 문제풀이'] }
     );
@@ -638,10 +691,15 @@ function finish(){
 }
 const shortQ = q => (q.q.split('\n')[0]).slice(0,28) + (q.q.length>28?'…':'');
 
+/* 오답노트·결과에 붙일 짧은 이름. 기출 회차 제목은 그대로 쓰면 너무 길다. */
+const tagOf = q => isX(q.gi)
+  ? String(q.chap).replace(/\s*(과년도|최근)\s*기출(복원)?문제\s*$/,'')
+  : String(q.chap).replace(/^CHAPTER \d+\s*/,'');
+
 function wrongCard(q, pick){
   const mine = pick ? CIRC[pick-1] + ' ' + esc(q.ch[pick-1]) : '<i style="color:var(--dim)">고르지 않음</i>';
   return '<div class="wrongItem">'
-    + '<div class="qhead"><span class="pill warm">'+esc(q.chap.replace(/^CHAPTER \d+\s*/,''))+' '+q.no+'번</span></div>'
+    + '<div class="qhead"><span class="pill warm">'+esc(tagOf(q))+' '+q.no+'번</span></div>'
     + '<div class="qtext" style="font-size:17px">'+esc(q.q)+'</div>' + imgTag(q.img,'qimg')
     + '<div style="font-size:15px;line-height:1.9">'
     +   '<span class="pill bad">내 답</span> ' + mine + '<br>'
@@ -659,7 +717,7 @@ function openWrong(){
       + '<b>아직 틀린 문제가 없어요.</b><div style="color:var(--dim);font-size:14px">연습이나 시험을 풀면 여기에 쌓입니다.</div></div>';
   }else{
     const items = w.map(r=>{
-      const g = BANK[r.gi]; if(!g||!g.qs[r.qi]) return '';
+      const g = grp(r.gi); if(!g||!g.qs[r.qi]) return '';
       const q = Object.assign({}, g.qs[r.qi], {gi:r.gi, qi:r.qi, chap:g.chap, part:g.part});
       return wrongCard(q, r.pick);
     }).filter(Boolean).join('');
@@ -851,6 +909,14 @@ async function unlockBank(pw, quiet){
     BANK.forEach((g,gi)=> g.qs.forEach((q,qi)=>
       FLAT.push(Object.assign({}, q, {gi:gi, qi:qi, chap:g.chap, part:g.part}))));
 
+    /* 기출은 회차마다 {year, round, title, qs}. 적중예상문제 묶음과 같은 모양
+       ({chap, part, qs})으로 맞춰 두면 배우기·문제풀이 코드를 그대로 쓸 수 있다. */
+    EXAM = (Array.isArray(payload) ? [] : (payload.exam || [])).map(e =>
+      ({chap:e.title, part:'기출', year:e.year, round:e.round, qs:e.qs}));
+    EFLAT = [];
+    EXAM.forEach((g,ei)=> g.qs.forEach((q,qi)=>
+      EFLAT.push(Object.assign({}, q, {gi:'x'+ei, qi:qi, chap:g.chap, part:g.part}))));
+
     try{
       localStorage.setItem(LOCK_KEY, pw);
       if(!info.exp) localStorage.setItem(SHARED_KEY, pw);   // 만료되는 코드는 공용에 넣지 않는다
@@ -861,7 +927,7 @@ async function unlockBank(pw, quiet){
       const c = await weekCode(info.ms, mondayOf(new Date()));
       extra = '<br><b style="color:var(--gold)">이번 주 학생 코드 — ' + prettyCode(c) + '</b>';
     }
-    say('✅ ' + FLAT.length + '문항이 열렸어요!' + extra, 'ok');
+    say('✅ ' + (FLAT.length + EFLAT.length) + '문항이 열렸어요!' + extra, 'ok');
     $('lockPw').value = '';
     renderHome();
     setTimeout(()=>{ $('lock').classList.add('hidden'); }, extra ? 2600 : 500);
@@ -880,7 +946,7 @@ $('lockPw').addEventListener('keydown', e=>{ if(e.key==='Enter') $('lockGo').cli
 
 /* 문항 수 표시 + 이전에 열었으면 조용히 자동 해제 */
 fetch('bank.enc',{cache:'no-store'}).then(r=>r.json())
-  .then(b=>{ $('lockN').textContent = (b.n||'') + '문항'; })
+  .then(b=>{ $('lockN').textContent = ((b.n||0) + (b.nx||0)) + '문항'; })
   .catch(()=>{ $('lockN').textContent = '(준비 중)'; });
 
 (function(){

@@ -12,3 +12,6 @@ exam/
 img/
 
 # exam_book.js 는 exam/ 를 모으는 조립기일 뿐이라 커밋한다.
+
+# 파이썬 임시 산출물
+__pycache__/

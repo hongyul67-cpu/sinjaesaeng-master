@@ -34,15 +34,17 @@ ITER = 200_000
 
 
 def extract_json():
-    """문항(bank_book.js)과 개념(concept_book.js)을 node 로 평가해 한 덩어리 JSON 으로 만든다.
+    """문항(bank_book.js) · 개념(concept_book.js) · 기출(exam_book.js)을
+    node 로 평가해 한 덩어리 JSON 으로 만든다.
 
-    두 파일을 하나의 payload 로 묶는 이유 — 잠금은 하나뿐인데 파일을 나누면
+    셋을 하나의 payload 로 묶는 이유 — 잠금은 하나뿐인데 파일을 나누면
     암호문도 둘이 되고, 다시 빌드할 때 한쪽만 올라가는 사고가 난다."""
     import subprocess, tempfile
     driver = (
         "const bank = require('./bank_book.js');\n"
         "const concept = require('./concept_book.js');\n"
-        "process.stdout.write(JSON.stringify({v:1, bank:bank, concept:concept}));\n"
+        "const exam = require('./exam_book.js');\n"
+        "process.stdout.write(JSON.stringify({v:1, bank:bank, concept:concept, exam:exam}));\n"
     )
     with tempfile.NamedTemporaryFile("w", suffix=".js", dir=HERE, delete=False, encoding="utf-8") as f:
         f.write(driver)
@@ -70,6 +72,7 @@ def main():
     data = json.loads(payload)
     items = data["bank"]
     concept = data["concept"]
+    exams = data.get("exam") or []
     raw = payload.encode("utf-8")
     gz = gzip.compress(raw, 9)
 
@@ -132,6 +135,7 @@ def main():
     io.open(OUT, "w", encoding="utf-8").write(json.dumps({
         "v": 2, "cipher": "AES-GCM", "gz": True, "n": sum(len(g["qs"]) for g in items),
         "build": build_id, "imgs": nimg,
+        "nx": sum(len(e["qs"]) for e in exams), "rounds": len(exams),
         "secs": sum(len(c["secs"]) for c in concept),
         "kdf": {"name": "PBKDF2", "hash": "SHA-256", "iter": ITER,
                 "salt": base64.b64encode(salt).decode()},
@@ -153,6 +157,7 @@ def main():
     print("  단원 %d개 · 문항 %d개 · 원본 %dKB -> gzip %dKB -> bank.enc %dKB"
           % (len(items), nq, len(raw) // 1024, len(gz) // 1024, os.path.getsize(OUT) // 1024))
     print("  개념 %d단원 · %d섹션" % (len(concept), sum(len(c["secs"]) for c in concept)))
+    print("  기출 %d회차 · %d문항" % (len(exams), sum(len(e["qs"]) for e in exams)))
     print("  교재 그림 %d장 -> enc/*.enc  (빌드 표식 %s)" % (nimg, build_id))
     print("")
     print("  교사용 암호 : %s   (만료 없음)" % a.pw)
