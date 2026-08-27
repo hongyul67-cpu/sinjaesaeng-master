@@ -200,7 +200,7 @@ body{
 <!-- data-build 은 빌드할 때 build_lock.py 가 박는 배포 표식이다.
      지금 올라간 것이 몇 번째 빌드인지 화면만 봐도 알 수 있고,
      bank.enc 에 표식이 없을 때의 대비책으로도 쓴다. -->
-<body data-build="ea72e65d">
+<body data-build="92ca0876">
 
 <!-- ══════════════ 잠금 화면 ══════════════ -->
 <div id="lock">
@@ -333,6 +333,9 @@ body{
 
 <script src="https://hongyul67-cpu.github.io/links/fx.js"></script>
 <script src="https://hongyul67-cpu.github.io/links/rank.js" data-tool="신재생에너지 마스터" data-pace="self"></script>
+<!-- 수업모드가 '정답 보기'를 찾아 크게 비춰 주도록 알려 준다.
+     이 도구는 정답 보기에 .hit 을 붙이는데, class-mode 의 기본값(.correct,.ok,.right,.answer)에는 없다. -->
+<script>window.CLASSMODE = { correct: '.choice.hit' };</script>
 <script src="https://hongyul67-cpu.github.io/links/class-mode.js"></script>
 <script src="https://hongyul67-cpu.github.io/links/reset.js"></script>
 <script>
@@ -493,8 +496,13 @@ function renderHome(){
    ========================================================= */
 let LN = {gi:0, i:0};
 function startLearn(gi){
-  LN = {gi:gi, i: load('learnAt',{})[gi] || 0};
+  LN = {gi:gi, i: load('learnAt',{})[gi] || 0, show:false};
   go('Learn'); drawLearn();
+}
+/* 배우기에서도 정답은 눌러야 열린다 — 수업에서 다 같이 답을 찾아본 뒤에 확인하기 위해서다. */
+function revealLearn(){
+  LN.show = true;
+  drawLearn();
 }
 function drawLearn(){
   const g = grp(LN.gi), q = g.qs[LN.i];
@@ -505,11 +513,17 @@ function drawLearn(){
 
   let html = '<div class="qhead"><span class="pill">'+q.no+'번</span></div>';
   html += '<div class="qtext">'+esc(q.q)+'</div>' + imgTag(q.img,'qimg');
+  const show = !!LN.show;
   q.ch.forEach((c,i)=>{
-    const on = (i+1)===q.a;
-    html += '<div class="choice '+(on?'hit':'')+'" style="cursor:default"><span class="no">'+CIRC[i]+'</span><span>'+esc(c)+(on?' <b style="color:var(--mint-d)">← 정답</b>':'')+'</span></div>';
+    const on = show && (i+1)===q.a;
+    /* 열기 전에는 정답 표시를 아예 넣지 않는다 — 색만 지우면 소스에서 답이 보인다 */
+    html += '<div class="choice '+(on?'hit':'')+'" style="cursor:default"><span class="no">'+CIRC[i]+'</span><span>'
+      + esc(c) + (on?' <b style="color:var(--mint-d)">← 정답</b>':'') + '</span></div>';
   });
-  html += exHtml(q);
+  /* 버튼 이름을 '정답 확인' 그대로 두는 이유: 수업모드(class-mode.js)가 이 글자로 버튼을
+     찾아 눌러 준다. 이름을 바꾸면 교실 화면에서 리모컨으로 정답이 열리지 않는다. */
+  html += show ? exHtml(q)
+    : '<button class="btn mint" style="width:100%;margin-top:14px" onclick="revealLearn()">정답 확인</button>';
   $('learnBody').innerHTML = html;
   fillImgs($('learnBody'));
 
@@ -519,10 +533,10 @@ function drawLearn(){
   $('learnPrev').disabled = LN.i===0;
   $('learnNext').textContent = (LN.i===g.qs.length-1) ? '다 봤어요 ✨' : '다음 →';
 }
-$('learnPrev').onclick = ()=>{ if(LN.i>0){ LN.i--; drawLearn(); } };
+$('learnPrev').onclick = ()=>{ if(LN.i>0){ LN.i--; LN.show=false; drawLearn(); } };
 $('learnNext').onclick = ()=>{
   const g = grp(LN.gi);
-  if(LN.i < g.qs.length-1){ LN.i++; drawLearn(); }
+  if(LN.i < g.qs.length-1){ LN.i++; LN.show=false; drawLearn(); }
   else {
     if(window.FX && FX.banner) FX.banner(isX(LN.gi) ? '이 회차 배우기 완료! 🎉' : '이 단원 배우기 완료! 🎉');
     const at = load('learnAt',{}); at[LN.gi] = 0; save('learnAt',at);
