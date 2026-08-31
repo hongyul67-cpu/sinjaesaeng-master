@@ -251,6 +251,9 @@ body{
       <div style="color:var(--dim);font-size:13.5px;margin:-4px 0 12px">
         회차를 골라 <b>배우기</b>로 정답·해설을 먼저 보고, 준비되면 <b>회차 시험</b>으로 60문항을 실제 시험처럼 풀어 보세요.
       </div>
+      <label style="display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:13.5px">
+        <input type="checkbox" id="examMix" checked> 문제·보기 순서 섞기</label>
+      <div id="examMixNote" style="color:var(--dim);font-size:12.5px;margin:0 0 12px;line-height:1.6"></div>
       <div id="examList" class="grid"></div>
     </div>
 
@@ -466,6 +469,13 @@ function renderHome(){
   }).join('');
   /* ── 기출 회차 ── */
   $('exN').textContent = EFLAT.length;
+  const mixBox=$('examMix'), mixNote=$('examMixNote');
+  if(mixBox && !mixBox.dataset.set){
+    mixBox.dataset.set='1'; mixBox.checked = !fixMode();
+    if(mixNote) mixNote.innerHTML = fixMode()
+      ? '🎓 <b>수업용 링크</b>로 들어왔습니다. 꺼 두면 교재 번호 차례 그대로라 «12번 보세요» 가 그대로 통합니다. 켜더라도 오늘 이 링크로 들어온 학생은 모두 같은 순서를 받습니다.'
+      : '회차에 든 문제는 그대로이고 나오는 <b>차례</b>와 <b>보기 차례</b>만 바뀝니다. 같은 회차를 다시 풀어도 «정답은 3번» 을 외우게 되지 않습니다.';
+  }
   $('examWrap').classList.toggle('hidden', !EXAM.length);
   $('examRoundN').textContent = EXAM.length + '회차';
   $('examList').innerHTML = EXAM.map((g,ei)=>{
@@ -562,13 +572,46 @@ function startExam(){
         i:0, pick:[], t0:Date.now() };
   go('Quiz'); drawQuiz();
 }
-/* 기출 회차 시험 — 실제 시험처럼 그 회차 전 문항을 교재 번호 순서 그대로 낸다.
-   섞지 않는 이유: 회차를 통째로 풀어 보는 것이 목적이라 순서도 시험지 그대로여야 한다. */
-function startRoundExam(ei){
+/* ── 기출 회차 시험 ─────────────────────────────────────────
+   회차에 든 문제는 그대로 두고 «나오는 차례»와 «보기 차례»만 바꾼다(스위치로 끌 수 있다).
+   수업용 링크(?fix=…)로 들어오면 기본이 «섞지 않음» — 교재 번호가 그대로라
+   "12번 보세요" 가 통한다. 켜더라도 그날 시드로 우리끼리 난수를 만들어 쓰므로
+   학생 전원이 같은 순서를 받는다. */
+function fixMode(){ return !!(window.FixOrder && window.FixOrder.on); }
+function mixRnd(key){
+  if(!fixMode()) return Math.random;
+  let h=2166136261, k=String(key);
+  for(let i=0;i<k.length;i++){ h^=k.charCodeAt(i); h=(h*16777619)>>>0; }
+  let a=((window.FixOrder.seed>>>0)^h)>>>0;
+  return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t; return((t^(t>>>14))>>>0)/4294967296; };
+}
+function shuffledBy(arr,rnd){ const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor((rnd||Math.random)()*(i+1)); const t=a[i];a[i]=a[j];a[j]=t; }
+  return a; }
+/* 보기를 섞으면 안 되는 문항 — 문제·보기에 ①~④ 가 적혀 있거나 «위 모두 옳다» 류 */
+const CIRCRE=/[①②③④]/, AGGREG=/모두 (옳|맞|정답|해당)|위 모두|위의 모두|정답이 없|해당 없/;
+function mixChoices(q,rnd){
+  const ch=q.ch||[];
+  if(CIRCRE.test(q.q||'') || ch.some(c=>CIRCRE.test(c)||AGGREG.test(c))) return q;
+  const ord=shuffledBy(ch.map((_,i)=>i),rnd);            // ord[새자리]=옛자리
+  const to=[]; ord.forEach((old,now)=>{ to[old]=now; });  // to[옛자리]=새자리
+  return Object.assign({}, q, {
+    ch: ord.map(i=>ch[i]),
+    a: to[q.a-1]+1,
+    /* 해설이 «③은 틀림» 처럼 번호를 짚는 곳이 있어 함께 옮긴다 */
+    ex: String(q.ex||'').replace(/[①②③④]/g, c=>CIRC[to[CIRC.indexOf(c)]]),
+    _ord: ord                                            // 오답노트는 원래 번호로 되돌려 적는다
+  });
+}
+function startRoundExam(ei, mix){
   const g = EXAM[ei];
-  Q = { mode:'exam', gi:'x'+ei, label: g.chap,
-        list: EFLAT.filter(q=>q.gi==='x'+ei),
-        i:0, pick:[], t0:Date.now(), again:'startRoundExam('+ei+')' };
+  const box = $('examMix');
+  const on = (mix==null) ? !!(box && box.checked) : !!mix;
+  let list = EFLAT.filter(q=>q.gi==='x'+ei);
+  if(on){ const rnd=mixRnd('x'+ei); list = shuffledBy(list,rnd).map(q=>mixChoices(q,rnd)); }
+  Q = { mode:'exam', gi:'x'+ei, label: g.chap, list: list,
+        i:0, pick:[], t0:Date.now(), again:'startRoundExam('+ei+','+(on?'true':'false')+')' };
   go('Quiz'); drawQuiz();
 }
 function quitQuiz(){ if(confirm('그만두면 지금까지 푼 것은 저장되지 않아요. 나갈까요?')){ Q=null; renderHome(); go('Home'); } }
@@ -631,7 +674,8 @@ function noteWrong(q, pick){
   const w = load('wrong',[]);
   const id = qid(q);
   const idx = w.findIndex(x=>x.id===id);
-  const row = {id:id, gi:q.gi, qi:q.qi, pick:pick, at:Date.now()};
+  const back = (q._ord && pick>=1) ? q._ord[pick-1]+1 : pick;   // 섞어 푼 경우 원래 보기 번호로
+  const row = {id:id, gi:q.gi, qi:q.qi, pick:back, at:Date.now()};
   if(idx>=0) w[idx] = row; else w.push(row);
   save('wrong', w.slice(-300));
 }
