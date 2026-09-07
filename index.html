@@ -42,7 +42,7 @@ body{
   min-height:100vh;
 }
 .wrap{max-width:940px;margin:0 auto;padding:20px 16px 96px}
-  /* 가운데 내용을 큰 화면에서 70% 폭으로 (수업모드·전자칠판·모바일·인쇄는 그대로) */
+  /* 가운데 내용을 큰 화면에서 70% 폭으로 (수업 슬라이드·모바일·인쇄는 그대로) */
   @media screen and (min-width:1024px){
     body:not(.cm-on):not(.bd-open):not(.board):not(.teach-open) .wrap{min-width:min(70vw,1600px)}
   }
@@ -242,6 +242,13 @@ body{
       </div>
     </div>
 
+    <!-- 선생님용 입구 — 학생용 개념·배우기는 그대로 두고, 같은 범위를 교실 화면용
+         슬라이드로 한 벌 더 연다. 화면은 links 의 공용 board-pro.js 다. -->
+    <div style="text-align:center;margin:2px 0 10px">
+      <button type="button" id="openBoard" style="background:none;border:none;color:#7a8aa0;
+        font-size:.85rem;cursor:pointer">📽️ 수업 슬라이드 열기 (선생님용) →</button>
+    </div>
+
     <div id="chapList" class="grid"></div>
 
     <!-- 기출은 회차 그대로 푸는 것이라 단원 목록과 섞지 않고 따로 둔다.
@@ -336,10 +343,6 @@ body{
 
 <script src="https://hongyul67-cpu.github.io/links/fx.js"></script>
 <script src="https://hongyul67-cpu.github.io/links/rank.js" data-tool="신재생에너지 마스터" data-pace="self"></script>
-<!-- 수업모드가 '정답 보기'를 찾아 크게 비춰 주도록 알려 준다.
-     이 도구는 정답 보기에 .hit 을 붙이는데, class-mode 의 기본값(.correct,.ok,.right,.answer)에는 없다. -->
-<script>window.CLASSMODE = { correct: '.choice.hit' };</script>
-<script src="https://hongyul67-cpu.github.io/links/class-mode.js"></script>
 <script src="https://hongyul67-cpu.github.io/links/reset.js"></script>
 <script>
 /* =========================================================
@@ -530,8 +533,8 @@ function drawLearn(){
     html += '<div class="choice '+(on?'hit':'')+'" style="cursor:default"><span class="no">'+CIRC[i]+'</span><span>'
       + esc(c) + (on?' <b style="color:var(--mint-d)">← 정답</b>':'') + '</span></div>';
   });
-  /* 버튼 이름을 '정답 확인' 그대로 두는 이유: 수업모드(class-mode.js)가 이 글자로 버튼을
-     찾아 눌러 준다. 이름을 바꾸면 교실 화면에서 리모컨으로 정답이 열리지 않는다. */
+  /* 버튼 이름은 '정답 확인' 그대로 둔다 — 학생이 익힌 이름이다.
+     (수업 모드는 걷어냈다. 교실 화면은 수업 슬라이드로 따로 연다.) */
   html += show ? exHtml(q)
     : '<button class="btn mint" style="width:100%;margin-top:14px" onclick="revealLearn()">정답 확인</button>';
   $('learnBody').innerHTML = html;
@@ -1023,6 +1026,38 @@ fetch('bank.enc',{cache:'no-store'}).then(r=>r.json())
     })(0);
   }catch(e){}
 })();
+</script>
+<!-- 수업 슬라이드 — 원고(lesson.js)는 이 저장소 것, 화면(board-pro.js)은 links 의 공용 파일이다.
+     저장소마다 사본을 두면 뷰어가 갈라진다. 고칠 일이 생기면 links 쪽 하나만 고친다.
+     lesson.js 는 평문이라 교재 문항·해설·스캔 그림을 담지 않는다(파일 머리말 참고). -->
+<script src="lesson.js"></script>
+<script src="https://hongyul67-cpu.github.io/links/board-pro.js"></script>
+<script>
+function openBoard(){
+  if(!window.BoardPro || !(window.LESSON||[]).length){
+    alert('수업 슬라이드를 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.'); return;
+  }
+  var ALL = window.LESSON, LF = window.LESSFIG || {}, units = [];
+  ALL.forEach(function(s){ if(units.indexOf(s.u)<0) units.push(s.u); });
+  var menu = units.map(function(u){
+    var list = ALL.filter(function(s){ return s.u===u; });
+    return { icon:'🌞', title:u, desc:'슬라이드 '+list.length+'장 · '+list[0].t,
+             run:{ kind:'lesson', deck:list } };
+  });
+  menu.push({ icon:'📚', wide:true, title:'전체 이어서 ('+ALL.length+'장)',
+              desc:'신재생에너지 개요부터 관련 법규까지 순서대로 진행합니다.',
+              run:{ kind:'lesson', deck:ALL } });
+  menu.push({ icon:'⬜', wide:true, title:'빈 칠판', desc:'슬라이드 없이 판서만. 회로나 계산을 직접 풀어 보일 때.',
+              run:{ kind:'blank' } });
+  BoardPro.open({
+    title:'📽️ 신재생에너지 · 수업 슬라이드',
+    sub:'요점 → <b>발문</b> → 퀴즈 → 정답을 하나씩 엽니다. 화면 어디든 바로 판서됩니다.<br>'+
+        '요점 속 <b>파란 빈칸</b>은 눌러야 답이 보입니다.',
+    menu: menu,
+    fig: function(s){ return (s.fig && LF[s.fig]) ? LF[s.fig]() : ''; }
+  });
+}
+document.getElementById('openBoard').onclick = openBoard;
 </script>
 <script src="https://hongyul67-cpu.github.io/links/collector.js" data-tool="신재생에너지 마스터"></script>
 </body>
